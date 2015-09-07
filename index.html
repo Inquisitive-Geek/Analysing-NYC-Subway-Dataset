@@ -22,46 +22,41 @@
       <h2>
 <a id="background" class="anchor" href="#background" aria-hidden="true"><span class="octicon octicon-link"></span></a>Background</h2>
 
-<p>In this project, we look at the NYC Subway data and figure out if more people ride the subway when it is raining versus when it is not raining. We will wrangle the NYC subway data, use statistical methods and data visualization to draw an interesting conclusion about the subway dataset that we've analyzed.</p>
+<p>In this project, we look at the NYC Subway data and figure out if more people ride the subway when it is raining versus when it is not raining. We will wrangle the NYC subway data, use statistical methods and data visualization to draw an interesting conclusion about the subway dataset that we've analyzed. The dataset used can be downloaded using the following <a href="https://www.dropbox.com/s/meyki2wl9xfa7yk/turnstile_data_master_with_weather.csv">link</a></p>
 
 <h2>
-<a id="problems-encountered-in-the-map" class="anchor" href="#problems-encountered-in-the-map" aria-hidden="true"><span class="octicon octicon-link"></span></a>Problems Encountered in the Map</h2>
-
-<p>After initially downloading a small sample size of the Raleigh data and running it against a provisional data.py file, I noticed three main problems with the data, which I will discuss in the following order:</p>
-
-<ul>
-<li>
-<em>Multiple streets for a node:</em> A university like NCSU has multiple streets in it. But the street keys aren’t of the form “addr:street”. In such cases, the data is still cleaned for the streets but they are not added to an address dictionary value. Instead, the keys are kept as is.</li>
-<li>
-<em>Relation nodes:</em> There are some nodes who have element names as ‘Relation’. They are handled in a similar way as ways and nodes.</li>
-<li>
-<em>Postal codes:</em> There are a lot of postal codes which don’t pertain to Raleigh, NC. Some investigation is done around it to find out the root cause.</li>
-</ul>
-
-<h2>
-<a id="data-overview" class="anchor" href="#data-overview" aria-hidden="true"><span class="octicon octicon-link"></span></a>Data Overview</h2>
-
-<p>This section contains basic statistics about the dataset and the MongoDB queries used to gather them.</p>
-
-<h2>
-<a id="additional-ideas" class="anchor" href="#additional-ideas" aria-hidden="true"><span class="octicon octicon-link"></span></a>Additional Ideas</h2>
+<a id="statistical-testing" class="anchor" href="#statistical-testing" aria-hidden="true"><span class="octicon octicon-link"></span></a>Statistical Testing</h2>
 
 <h3>
-<a id="contributor-statistics-and-gamification-suggestion" class="anchor" href="#contributor-statistics-and-gamification-suggestion" aria-hidden="true"><span class="octicon octicon-link"></span></a><strong>Contributor statistics and gamification suggestion</strong>
-</h3>
+<a id="test-used" class="anchor" href="#test-used" aria-hidden="true"><span class="octicon octicon-link"></span></a>Test Used</h3>
 
-<p>Few users contribute to the most data which suggests automated entry of some admin. Here are some statistics:</p>
-
-<ul>
-<li>Top user contribution percentage (“jumbanho”) – 76.82%</li>
-<li>Top user contribution percentage (“jumbanho”) – 76.82%</li>
-</ul>
-
-<p>It is clear that the contribution of the top 10 users is too high as compared to the total number of users (724). If some incentives are given to the users to contribute more, it will help spur the data entry process and will also provide more quality to the data. </p>
+<p>The distributions of the data sets for the two conditions - rainy and non-rainy - are not normal, hence the Mann-Whitney test is applicable. The Mann-Whitney U test was used to analyze the NYC subway data. I used a two-tailed P value. The null hypothesis is that the mean of the entries with rain is equal to the mean of the entries without rain. The p-critical value is 0.0498.</p>
 
 <h3>
-<a id="additional-data-exploration-using-mongodb-queries" class="anchor" href="#additional-data-exploration-using-mongodb-queries" aria-hidden="true"><span class="octicon octicon-link"></span></a><strong>Additional data exploration using MongoDB queries</strong>
-</h3>
+<a id="statistical-test-results" class="anchor" href="#statistical-test-results" aria-hidden="true"><span class="octicon octicon-link"></span></a>Statistical test results</h3>
+
+<pre><code>import numpy as np
+import scipy
+import scipy.stats
+import pandas
+
+def mann_whitney_plus_means(turnstile_weather):
+    with_rain = turnstile_weather[turnstile_weather.rain == 1]['ENTRIESn_hourly']
+    without_rain = turnstile_weather[turnstile_weather.rain == 0]['ENTRIESn_hourly']
+    with_rain_mean = np.mean(with_rain)
+    without_rain_mean = np.mean(without_rain)
+    U,p = scipy.stats.mannwhitneyu(with_rain,without_rain)
+    return with_rain_mean, without_rain_mean, U, p
+</code></pre>
+
+<p>Results from the statistical test are as follows:</p>
+
+<ul>
+<li>P-value:  0.0498</li>
+<li>Mean with rain:   1105.4464</li>
+<li>Mean without rain:          1090.2788<br>
+The two-tailed p-value is less than 0.05. This means that the null hypothesis that the mean number of hourly entries with rain is equal to that without rain is rejected.</li>
+</ul>
 
 <h2>
 <a id="linear-regression" class="anchor" href="#linear-regression" aria-hidden="true"><span class="octicon octicon-link"></span></a>Linear Regression</h2>
