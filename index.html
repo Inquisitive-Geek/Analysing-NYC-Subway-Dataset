@@ -183,40 +183,62 @@ ake Forest'}, {u'count': 2, u'_id': u'durham'}, {u'count': 2, u'_id': u'chapel H
 <a id="additional-data-exploration-using-mongodb-queries" class="anchor" href="#additional-data-exploration-using-mongodb-queries" aria-hidden="true"><span class="octicon octicon-link"></span></a><strong>Additional data exploration using MongoDB queries</strong>
 </h3>
 
-<h4>
-<a id="top-10-appearing-amenities" class="anchor" href="#top-10-appearing-amenities" aria-hidden="true"><span class="octicon octicon-link"></span></a>Top 10 appearing amenities</h4>
+<h2>
+<a id="linear-regression" class="anchor" href="#linear-regression" aria-hidden="true"><span class="octicon octicon-link"></span></a>Linear Regression</h2>
 
-<pre><code>&gt;&gt;&gt; amenity_list = list(db.data.aggregate([{"$match":{"amenity":{"$exists":1}}},{"$group":{"_id":"$amenity","count":{"$s
-um":1}}},{"$sort":{"count":-1}},{"$limit":10}]))
-&gt;&gt;&gt; amenity_list
+<p>OLS using Statsmodels library was the approach used to perform linear regression. Gradient descent was not used as OLS is more accurate. Rain and Hour were the features used apart from the dummy variables which can be seen from the code below.</p>
 
-[{u'count': 1935, u'_id': u'parking'}, {u'count': 551, u'_id': u'place_of_worship'}, {u'count': 523, u'_id': u'bicycle_p
-arking'}, {u'count': 499, u'_id': u'restaurant'}, {u'count': 254, u'_id': u'fast_food'}, {u'count': 227, u'_id': u'schoo
-l'}, {u'count': 205, u'_id': u'fuel'}, {u'count': 130, u'_id': u'bench'}, {u'count': 112, u'_id': u'bank'}, {u'count': 1
-08, u'_id': u'swimming_pool'}]          
+<pre><code>import numpy as np
+import pandas
+import statsmodels.api as sm
+
+def linear_regression(features, values):
+    """
+    Perform linear regression given a data set with an arbitrary number of features.
+    """
+
+    features = sm.add_constant(features,prepend=True)
+    model = sm.OLS(values,features).fit()
+    print model.summary()
+    params = model.params
+    intercept = params[0]
+    params = params[1:]
+    return intercept, params
+
+def predictions(dataframe):
+    features = dataframe[['rain', 'Hour']]
+    dummy_units = pandas.get_dummies(dataframe['UNIT'], prefix='unit')
+    features = features.join(dummy_units[['unit_R170','unit_R022','unit_R179','unit_R029','unit_R012',
+                            'unit_R046','unit_R023','unit_R047','unit_R293','unit_R055','unit_R084','unit_R011',
+                            'unit_R178','unit_R452','unit_R001','unit_R108',
+                            'unit_R010','unit_R195','unit_R021','unit_R102','unit_R018','unit_R033',
+                            'unit_R175','unit_R177','unit_R051','unit_R138','unit_R017','unit_R057',
+                            'unit_R168','unit_R080','unit_R050','unit_R127','unit_R025',
+                            'unit_R141','unit_R163','unit_R044','unit_R019','unit_R031','unit_R248','unit_R032',
+                            'unit_R083','unit_R461','unit_R240','unit_R235','unit_R208','unit_R014','unit_R053',
+                            'unit_R020','unit_R142','unit_R081','unit_R028','unit_R222','unit_R131','unit_R105',
+                            'unit_R113','unit_R144','unit_R167','unit_R079','unit_R463','unit_R035',
+                            'unit_R132','unit_R176','unit_R300','unit_R158','unit_R164','unit_R097',
+                            'unit_R101','unit_R116','unit_R027','unit_R110','unit_R201','unit_R160','unit_R041'
+                            ]])
+
+    # Values
+    values = dataframe['ENTRIESn_hourly']
+
+    # Perform linear regression
+    intercept, params = linear_regression(features, values)
+
+    predictions = intercept + np.dot(features, params)
+    return predictions
 </code></pre>
 
-<h4>
-<a id="top-10-appearing-shops" class="anchor" href="#top-10-appearing-shops" aria-hidden="true"><span class="octicon octicon-link"></span></a>Top 10 appearing shops</h4>
+<h3>
+<a id="choice-of-predictors-explained" class="anchor" href="#choice-of-predictors-explained" aria-hidden="true"><span class="octicon octicon-link"></span></a>Choice of Predictors Explained</h3>
 
-<pre><code>&gt;&gt;&gt; shop_list = list(db.data.aggregate([{"$match":{"shop":{"$exists":1}}},{"$group":{"_id":"$shop","count":{"$sum":1}}},
-{"$sort":{"count":-1}},{"$limit":10}]))
-&gt;&gt;&gt;
-&gt;&gt;&gt; shop_list
-[{u'count': 147, u'_id': u'convenience'}, {u'count': 117, u'_id': u'supermarket'}, {u'count': 94, u'_id': u'clothes'}, {
-u'count': 57, u'_id': u'car_repair'}, {u'count': 56, u'_id': u'hairdresser'}, {u'count': 52, u'_id': u'vacant'}, {u'coun
-t': 46, u'_id': u'mall'}, {u'count': 36, u'_id': u'department_store'}, {u'count': 36, u'_id': u'beauty'}, {u'count': 27,
- u'_id': u'jewelry'}]
-</code></pre>
-
-<h4>
-<a id="most-popular-supermarkets" class="anchor" href="#most-popular-supermarkets" aria-hidden="true"><span class="octicon octicon-link"></span></a>Most popular supermarkets</h4>
-
-<pre><code>&gt;&gt;&gt; supermarket_list = list(db.data.aggregate([{"$match":{"shop":{"$exists":1},"shop":"supermarket"}},{"$group":{"_id":"
-$name","count":{"$sum":1}}},{"$sort":{"count":-1}},{"$limit":2}]))
-&gt;&gt;&gt; supermarket_list
-[{u'count': 22, u'_id': u'Food Lion'}, {u'count': 22, u'_id': u'Harris Teeter'}]
-</code></pre>
+<ul>
+<li>‘rain’ is the first variable that comes to mind to decide whether people might use the subway or not. If it rains, then people might decide to use the subway. Also, ‘Hour’ of the day is another variable that helps in predicting usage of subway as people would use the subway more often in the mornings and the evenings as compared to late night or during the afternoon. All the dummy variables were included as they categorize the data and hence would help in identification. </li>
+<li>To filter out the dummy variables, I ran a full model with all the dummy variables. The resulting model summary gave the t-values and p-values of the dummy variables. Inclusion of dummy variables with higher t-values improved the r-squared significantly. I sorted the variables in descending order of t-values and included dummy variables in the model till the r-squared value crossed the threshold mentioned of 0.4.</li>
+</ul>
 
 <h2>
 <a id="visualizations" class="anchor" href="#visualizations" aria-hidden="true"><span class="octicon octicon-link"></span></a>Visualizations</h2>
@@ -245,8 +267,20 @@ $name","count":{"$sum":1}}},{"$sort":{"count":-1}},{"$limit":2}]))
 
 <p><img src="https://github.com/Inquisitive-Geek/Analysing-NYC-Subway-Dataset/blob/master/Images/Histogram.png?raw=true" alt="Histogram of subway entry frequency v/s times"></p>
 
-<p>The below graph shows the plot of the mean pressure variation versus dates. It shows how the mean pressure variation varies on different days. 
-<img src="https://github.com/Inquisitive-Geek/Analysing-NYC-Subway-Dataset/blob/master/Images/Mean_Pressure_Vs_Date.png?raw=true" alt="Mean Pressure Variation v/s Date"></p>
+<p>The below graph shows the plot of the mean pressure variation versus dates. It shows how the mean pressure variation varies on different days. </p>
+
+<pre><code>    pandas.options.mode.chained_assignment = None  # default='warn'
+    turnstile_weather.iscopy = False
+    turnstile_weather.loc[:,('DATEn')] = pandas.to_datetime(turnstile_weather.loc[:,('DATEn')], format="%Y-%m-%d")
+    df = turnstile_weather.groupby('DATEn')
+    index = [gp_keys[0] for gp_keys in df.groups.values()]
+    unique_df = turnstile_weather.reindex(index).sort('DATEn')   
+    plot = ggplot(unique_df, aes(x='DATEn', y='meanpressurei')) + geom_line(color = 'red') + \
+    ggtitle('Mean Pressure variation') + xlab('Date') + ylab('Mean Pressure') + scale_x_date(labels = date_format("%Y-%m-%d"))
+    return plot
+</code></pre>
+
+<p><img src="https://github.com/Inquisitive-Geek/Analysing-NYC-Subway-Dataset/blob/master/Images/Mean_Pressure_Vs_Date.png?raw=true" alt="Mean Pressure Variation v/s Date"></p>
 
 <h2>
 <a id="conclusion" class="anchor" href="#conclusion" aria-hidden="true"><span class="octicon octicon-link"></span></a>Conclusion</h2>
