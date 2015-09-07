@@ -221,9 +221,32 @@ $name","count":{"$sum":1}}},{"$sort":{"count":-1}},{"$limit":2}]))
 <h2>
 <a id="visualizations" class="anchor" href="#visualizations" aria-hidden="true"><span class="octicon octicon-link"></span></a>Visualizations</h2>
 
+<p>A histogram of the hourly number of entries is plotted when there is rain and when there is not. The histograms are not normally distributed and have their peaks near 0. </p>
+
+<pre><code>    df = turnstile_weather.groupby('TIMEn')
+    dfSum = df['ENTRIESn_hourly'].sum()
+
+    TIMEn = []
+    ENTRIESn_hourlySum = []
+    for key, value in dfSum.iteritems():
+        TIMEn.append(key)
+        ENTRIESn_hourlySum.append(value)
+    ENTRIESn_hourlySum = np.log(ENTRIESn_hourlySum)    
+    ENTRIESn_hourlySum = ENTRIESn_hourlySum.astype(int)
+    dfPlot = DataFrame({'TIMEn':Series(TIMEn),'ENTRIESn_hourlySum':Series(ENTRIESn_hourlySum)})    
+    #Filtering out the -inf values
+    dfPlot = dfPlot[dfPlot['ENTRIESn_hourlySum'] &gt; 0]  
+    #Getting the highest ENTRIESn_hour sum values 
+    dfPlot = dfPlot[dfPlot['ENTRIESn_hourlySum'] &gt; (3*np.mean(dfPlot['ENTRIESn_hourlySum']))]    
+    plot = ggplot(dfPlot,aes('TIMEn','ENTRIESn_hourlySum')) + geom_bar(stat="bar") + \
+            ggtitle('Highest entry counts with times during the day') + xlab('Times in Day') + ylab('Log of Hourly Entries') 
+    return plot
+</code></pre>
+
 <p><img src="https://github.com/Inquisitive-Geek/Analysing-NYC-Subway-Dataset/blob/master/Images/Histogram.png?raw=true" alt="Histogram of subway entry frequency v/s times"></p>
 
-<p><img src="https://github.com/Inquisitive-Geek/Analysing-NYC-Subway-Dataset/blob/master/Images/Mean_Pressure_Vs_Date.png?raw=true" alt="Mean Pressure Variation v/s Date"></p>
+<p>The below graph shows the plot of the mean pressure variation versus dates. It shows how the mean pressure variation varies on different days. 
+<img src="https://github.com/Inquisitive-Geek/Analysing-NYC-Subway-Dataset/blob/master/Images/Mean_Pressure_Vs_Date.png?raw=true" alt="Mean Pressure Variation v/s Date"></p>
 
 <h2>
 <a id="conclusion" class="anchor" href="#conclusion" aria-hidden="true"><span class="octicon octicon-link"></span></a>Conclusion</h2>
