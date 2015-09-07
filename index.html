@@ -38,130 +38,10 @@
 <em>Postal codes:</em> There are a lot of postal codes which don’t pertain to Raleigh, NC. Some investigation is done around it to find out the root cause.</li>
 </ul>
 
-<h3>
-<a id="multiple-streets-for-a-node" class="anchor" href="#multiple-streets-for-a-node" aria-hidden="true"><span class="octicon octicon-link"></span></a><strong>Multiple streets for a node</strong>
-</h3>
-
-<p>There are some tags which contain field values like “Street_1” and “Street_2”. They seem be the adjoining streets of a building and hence the attributes are kept as they are. </p>
-
-<h3>
-<a id="postal-codes" class="anchor" href="#postal-codes" aria-hidden="true"><span class="octicon octicon-link"></span></a><strong>Postal codes</strong>
-</h3>
-
-<p>Raleigh postal codes are in this range - 27587, 27601, 27605, 27608, 27609, 27612, 27613, 27614, 27615, 27616.[3] The database contains a lot of other values though. A lot of postal codes don’t refer to Raleigh, NC but the surrounding areas. </p>
-
-<pre><code>&gt;&gt;&gt; x_post_code = db.data.aggregate([{"$match":{"address.postcode":{"$exists":1}}}, {"$group":{"_id":"$address.postcode", "count":{"$sum":1}}}, {"$sort":{"count":1}}])
-&gt;&gt;&gt; list_post = list(x_post_code)
-&gt;&gt;&gt; for i in list_post: print i['_id']
-</code></pre>
-
-<p>A subset of the results is shown here:
-27612-7156
-27612-3326
-27519-6205
-27511-5928</p>
-
-<p>In the above list, many postal codes like 27519, 27511 are not in Raleigh. 
-A query to find the list of cities confirms it too.</p>
-
-<pre><code>&gt;&gt;&gt; x_city = db.data.aggregate([{"$match":{"address.city":{"$exists":1}}}, {"$group":{"_id":"$address.city", "count":{"$
-&gt;&gt;&gt; x_city_l = list(x_city)
-&gt;&gt;&gt; x_city_l
-[{u'count': 1, u'_id': u'cary'}, {u'count': 1, u'_id': u'Ra'}, {u'count': 1, u'_id': u'Apex'}, {u'count': 2, u'_id': u'W
-ake Forest'}, {u'count': 2, u'_id': u'durham'}, {u'count': 2, u'_id': u'chapel Hill'}, {u'count': 2, u'_id': u'raleigh'}
-, {u'count': 108, u'_id': u'Morrisville'}, {u'count': 236, u'_id': u'Chapel Hill'}, {u'count': 279, u'_id': u'Carrboro'}
-, {u'count': 885, u'_id': u'Raleigh'}, {u'count': 1295, u'_id': u'Durham'}, {u'count': 1745, u'_id': u'Cary'}]
-</code></pre>
-
-<p>Cities like Apex and Morrisville which are around Raleigh are also included in this extract. So the data gives info of Raleigh and its surrounding areas.</p>
-
 <h2>
 <a id="data-overview" class="anchor" href="#data-overview" aria-hidden="true"><span class="octicon octicon-link"></span></a>Data Overview</h2>
 
 <p>This section contains basic statistics about the dataset and the MongoDB queries used to gather them.</p>
-
-<h4>
-<a id="file-sizes" class="anchor" href="#file-sizes" aria-hidden="true"><span class="octicon octicon-link"></span></a>File sizes</h4>
-
-<p>raleigh_north-carolina.osm……………………………………… 518045444 Bytes </p>
-
-<pre><code># Finding out the file size
-&gt;&gt;&gt; import os
-&gt;&gt;&gt; statinfo = os.stat('new-york_new-york.osm')
-&gt;&gt;&gt; print statinfo.st_size
-518045444
-</code></pre>
-
-<p>The following are the counts of the various node types in the input file:</p>
-
-<pre><code>{'bounds': 1,
- 'member': 7683,
- 'nd': 2829895,
- 'node': 2564072,
- 'osm': 1,
- 'relation': 741,
- 'tag': 819970,
- 'way': 216498}
-</code></pre>
-
-<p>Exploration of the data has been done to prevent issues while loading the data in MongoDB. The result is the following:</p>
-
-<pre><code>{'lower': 498201, 'lower_colon': 276537, 'other': 45231, 'problemchars': 1}
-</code></pre>
-
-<p>The above categories have been formed by comparing the key value to various regular expressions written in the code leading to the above result.</p>
-
-<h4>
-<a id="number-of-documents" class="anchor" href="#number-of-documents" aria-hidden="true"><span class="octicon octicon-link"></span></a>Number of documents</h4>
-
-<pre><code>&gt;&gt;&gt; db.data.find().count()
-2781311
-</code></pre>
-
-<h4>
-<a id="number-of-nodes" class="anchor" href="#number-of-nodes" aria-hidden="true"><span class="octicon octicon-link"></span></a>Number of nodes</h4>
-
-<pre><code>&gt;&gt;&gt; db.data.find({"type":"node"}).count()
-2564072
-</code></pre>
-
-<h4>
-<a id="number-of-ways" class="anchor" href="#number-of-ways" aria-hidden="true"><span class="octicon octicon-link"></span></a>Number of ways</h4>
-
-<pre><code>&gt;&gt;&gt; db.data.find({"type":"way"}).count()
-216498
-</code></pre>
-
-<h4>
-<a id="number-of-relations" class="anchor" href="#number-of-relations" aria-hidden="true"><span class="octicon octicon-link"></span></a>Number of relations</h4>
-
-<pre><code>&gt;&gt;&gt; db.data.find({"type":"relation"}).count()
-741
-</code></pre>
-
-<h4>
-<a id="number-of-unique-users" class="anchor" href="#number-of-unique-users" aria-hidden="true"><span class="octicon octicon-link"></span></a>Number of unique users</h4>
-
-<pre><code>&gt;&gt;&gt; len(db.data.distinct("created.user"))
-724
-</code></pre>
-
-<h4>
-<a id="top-1-contributing-user" class="anchor" href="#top-1-contributing-user" aria-hidden="true"><span class="octicon octicon-link"></span></a>Top 1 contributing user</h4>
-
-<pre><code>&gt;&gt;&gt; x = db.data.aggregate([{"$group":{"_id":"$created.user", "count":{"$sum":1}}}, {"$sort":{"count":-1}}, {"$limit":1}])
-&gt;&gt;&gt; print list(x)
-[{u'count': 2136690, u'_id': u'jumbanho'}]
-</code></pre>
-
-<h4>
-<a id="number-of-users-appearing-only-once-having-1-post" class="anchor" href="#number-of-users-appearing-only-once-having-1-post" aria-hidden="true"><span class="octicon octicon-link"></span></a>Number of users appearing only once (having 1 post)</h4>
-
-<pre><code>&gt;&gt;&gt; x = db.data.aggregate([{"$group":{"_id":"$created.user", "count":{"$sum":1}}}, {"$group":{"_id":"$count", "num_users
-":{"$sum":1}}}, {"$sort":{"_id":1}}, {"$limit":1}])
-&gt;&gt;&gt; print list(x)
-[{u'num_users': 150, u'_id': 1}]
-</code></pre>
 
 <h2>
 <a id="additional-ideas" class="anchor" href="#additional-ideas" aria-hidden="true"><span class="octicon octicon-link"></span></a>Additional Ideas</h2>
@@ -239,6 +119,16 @@ def predictions(dataframe):
 <li>‘rain’ is the first variable that comes to mind to decide whether people might use the subway or not. If it rains, then people might decide to use the subway. Also, ‘Hour’ of the day is another variable that helps in predicting usage of subway as people would use the subway more often in the mornings and the evenings as compared to late night or during the afternoon. All the dummy variables were included as they categorize the data and hence would help in identification. </li>
 <li>To filter out the dummy variables, I ran a full model with all the dummy variables. The resulting model summary gave the t-values and p-values of the dummy variables. Inclusion of dummy variables with higher t-values improved the r-squared significantly. I sorted the variables in descending order of t-values and included dummy variables in the model till the r-squared value crossed the threshold mentioned of 0.4.</li>
 </ul>
+
+<h3>
+<a id="non-dummy-coefficient-values-and-r2" class="anchor" href="#non-dummy-coefficient-values-and-r2" aria-hidden="true"><span class="octicon octicon-link"></span></a>Non-dummy coefficient values and R^2</h3>
+
+<p>_Coefficients of the non-dummy variables: _
+‘const’: -18.9345
+‘rain’: 62.6158
+‘hour’: 59.1683</p>
+
+<p><em>R^2 value of 0.401</em> means that the model explained 40.1% of the data fit the regression model line. This linear model to predict ridership is not appropriate for this dataset, given the R^2 value. It could be that some variables given in the dataset which could increase the R^2 value have not been identified. There is also a chance that some important variable has not been captured during data collection too.</p>
 
 <h2>
 <a id="visualizations" class="anchor" href="#visualizations" aria-hidden="true"><span class="octicon octicon-link"></span></a>Visualizations</h2>
